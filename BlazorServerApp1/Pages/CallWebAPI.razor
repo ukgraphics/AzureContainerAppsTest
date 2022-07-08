@@ -1,0 +1,63 @@
+﻿@page "/call-web-api"
+@using BlazorServerApp1.Data
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@inject IHttpClientFactory ClientFactory
+@inject HttpClient Http
+
+<PageTitle>Call Web API</PageTitle>
+
+<h1>Albums</h1>
+
+@if (albums == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>番号</th>
+                <th>タイトル</th>
+                <th>アーティスト</th>
+                <th>価格</th>
+                <th>URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var album in albums)
+            {
+                <tr>
+                    <td>@album.Id</td>
+                    <td>@album.Title</td>
+                    <td>@album.Artist</td>
+                    <td>@album.Price</td>
+                    <td>@album.Image_url</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Album>? albums = Array.Empty<Album>();
+
+    protected override async Task OnInitializedAsync() => await GetAlbums();
+      
+    private async Task GetAlbums()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            "https://webapiapp1-app-20220708095658.blueisland-cb0bc39a.japaneast.azurecontainerapps.io/albums");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            albums = await JsonSerializer.DeserializeAsync<IEnumerable<Album>>(responseStream);
+        }
+    }
+}
